@@ -1,0 +1,135 @@
+# =============================================================================
+# MedVQA — Default Configuration
+# =============================================================================
+# All hyperparameters with comments explaining rationale.
+# Optimized for Colab T4 (15GB VRAM) with QLoRA + gradient checkpointing.
+
+project_name: "medvqa"
+experiment_name: "medvqa_biovil_mistral_qlora"
+
+# ---------------------------------------------------------------------------
+# Data Configuration
+# ---------------------------------------------------------------------------
+data:
+  dataset_name: "vqa-rad"                     # Primary dataset (VQA-RAD)
+  raw_dir: "data/raw"                          # Raw downloaded files
+  processed_dir: "data/processed"              # Tokenized/encoded splits
+  augmented_dir: "data/augmented"              # Augmented training samples
+  image_size: 224                              # BioViL-T input size (224x224)
+  max_question_length: 128                     # Truncate questions to 128 tokens
+  max_answer_length: 64                        # Max answer generation length
+  tokenizer_name: "mistralai/Mistral-7B-Instruct-v0.3"
+  use_augmentation: true
+  rotation_degrees: 10.0                       # Conservative rotation for medical
+  brightness_range: [0.9, 1.1]                 # Mild brightness jitter
+  contrast_range: [0.9, 1.1]                   # Mild contrast jitter
+  min_crop_retention: 0.85                     # Crop keeps at least 85%
+  gaussian_noise_sigma: 0.03                   # Very subtle noise
+  batch_size: 4                                # Small batch for T4 15GB
+  num_workers: 2                               # Limited by Colab CPU cores
+
+# ---------------------------------------------------------------------------
+# Model Architecture
+# ---------------------------------------------------------------------------
+model:
+  # Vision encoder
+  # Vision encoder — using CLIP ViT-L/14 by default (tested, works on all platforms).
+  # For medical-specific pretraining, switch to "microsoft/BiomedVLP-BioViL-T"
+  # but note: that model requires additional handling for vision extraction.
+  vision_encoder_name: "openai/clip-vit-large-patch14"
+  vision_encoder_fallback: "openai/clip-vit-large-patch14"
+  vision_hidden_size: 1024                     # CLIP ViT-L/14 hidden dim
+  projection_dim: 4096                         # Project to Mistral-7B hidden dim
+  freeze_vision_encoder: true                  # Initially freeze; fine-tune later
+  unfreeze_top_k_layers: 4                     # Unfreeze last 4 transformer blocks
+
+  # Language model
+  lm_model_name: "mistralai/Mistral-7B-Instruct-v0.3"
+  lm_hidden_size: 4096
+  lm_max_length: 512
+  load_in_4bit: true                           # NF4 quantization for T4
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_compute_dtype: "bfloat16"
+  bnb_4bit_use_double_quant: true              # Double quantization saves ~0.4GB
+
+  # QLoRA
+  use_lora: true
+  lora_r: 16                                   # Rank for LoRA adaptation
+  lora_alpha: 32                               # Scaling factor
+  lora_dropout: 0.05
+  lora_target_modules: ["q_proj", "v_proj", "k_proj", "o_proj"]
+
+  # Fusion layer
+  fusion_num_heads: 4                          # Cross-attention heads
+  fusion_dropout: 0.1
+  fusion_use_residual: true
+
+  # Generation
+  num_beams: 4
+  do_sample: true
+  temperature: 0.7
+  top_p: 0.9
+  repetition_penalty: 1.1
+
+# ---------------------------------------------------------------------------
+# Training Configuration
+# ---------------------------------------------------------------------------
+training:
+  learning_rate: 2.0e-4                        # Standard QLoRA LR
+  weight_decay: 0.01
+  batch_size: 4
+  gradient_accumulation_steps: 4               # Effective batch = 16
+  max_epochs: 10
+  max_steps: -1                                # Use epoch-based training
+  warmup_ratio: 0.05                           # 5% warmup
+  lr_scheduler_type: "cosine"
+  label_smoothing: 0.1
+  gradient_clipping: 1.0
+  fp16: false
+  bf16: true                                   # T4 supports bfloat16
+  gradient_checkpointing: true                 # Memory ~ VRAM tradeoff
+  optim: "paged_adamw_8bit"                    # Memory-efficient optimizer
+  save_strategy: "steps"
+  save_steps: 500
+  save_total_limit: 3
+  eval_strategy: "steps"
+  eval_steps: 500
+  logging_steps: 50
+  early_stopping_patience: 3
+  early_stopping_threshold: 0.01
+  closed_ended_alpha: 0.5                      # Weight for closed BCE loss
+  use_contrastive_loss: false                  # Enable for ablation experiments
+  contrastive_loss_weight: 0.1
+  report_to: "wandb"
+  seed: 42
+  output_dir: "experiments/medvqa_run"
+
+# ---------------------------------------------------------------------------
+# API-based LLM Configuration
+# ---------------------------------------------------------------------------
+# When inference.mode is "api", the pipeline uses a cloud LLM instead of the
+# local Mistral-7B model. This removes the GPU requirement entirely.
+#
+# Supported providers: openai, anthropic, gemini, ollama
+# See .env.example for API key setup.
+api:
+  provider: "openai"                      # openai | anthropic | gemini | ollama
+  model: "gpt-4o"                         # Provider-specific model name
+  temperature: 0.7                        # Sampling temperature (0.0 – 2.0)
+  max_tokens: 256                         # Max tokens in the response
+  ollama_base_url: "http://localhost:11434" # Only used with provider: ollama
+
+# ---------------------------------------------------------------------------
+# Inference Configuration
+# ---------------------------------------------------------------------------
+inference:
+  mode: "local"                            # "local" or "api"
+  checkpoint_path: "experiments/medvqa_run/best_model"
+  device: "cuda"
+  use_mc_dropout: true
+  mc_dropout_samples: 20
+  uncertainty_threshold: 0.3
+  temperature_scaling: true
+  temperature_scaler_path: "experiments/medvqa_run/temperature_scaler.pt"
+  cache_vision_outputs: true
+  max_new_tokens: 64
