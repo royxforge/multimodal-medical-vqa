@@ -287,7 +287,7 @@ multimodal-medical-vqa/
 ## Installation
 
 ```bash
-git clone https://github.com/royxlead/multimodal-medical-vqa.git
+git clone https://github.com/royxforge/multimodal-medical-vqa.git
 cd multimodal-medical-vqa
 
 python -m venv .venv
@@ -442,7 +442,7 @@ Predictions below the confidence threshold (default 0.3) are flagged:
 }
 ```
 
-This connects directly to the confidence monitoring work in [Production Drift Detection](https://github.com/royxlead/production-drift-detection) - the same entropy and margin signals used there for population-level monitoring apply here at the individual prediction level.
+This connects directly to the confidence monitoring work in [Production Drift Detection](https://github.com/royxforge/production-drift-detection) - the same entropy and margin signals used there for population-level monitoring apply here at the individual prediction level.
 
 ---
 
@@ -642,9 +642,8 @@ training:
 
 ## Related Work
 
-- [Production Drift Detection](https://github.com/royxlead/production-drift-detection) - The confidence monitoring and entropy tracking in MedVQA's ConfidenceEstimator shares methodology with the production drift monitoring system. Temperature scaling and MC Dropout are directly ported from the confidence research there.
-- [Loss Landscape Analysis](https://github.com/royxlead/loss-landscape-analysis) - MedVQA's closed-ended loss uses BCE with label smoothing, not MSE. The gradient saturation analysis in that work is the direct motivation for this choice on the yes/no classification head.
-- [CURA](https://github.com/royxlead/cura-python) - RAG-based medical QA for text-only question answering. MedVQA extends this into the multimodal domain via vision-language fusion.
+- [Production Drift Detection](https://github.com/royxforge/production-drift-detection) - The confidence monitoring and entropy tracking in MedVQA's ConfidenceEstimator shares methodology with the production drift monitoring system. Temperature scaling and MC Dropout are directly ported from the confidence research there.
+- [Loss Landscape Analysis](https://github.com/royxforge/loss-landscape-analysis) - MedVQA's closed-ended loss uses BCE with label smoothing, not MSE. The gradient saturation analysis in that work is the direct motivation for this choice on the yes/no classification head.
 
 ---
 
@@ -655,12 +654,12 @@ training:
   author = {Roy, Sourav},
   title  = {MedVQA: Multimodal Medical Visual Question Answering},
   year   = {2026},
-  url    = {https://github.com/royxlead/multimodal-medical-vqa}
+  url    = {https://github.com/royxforge/multimodal-medical-vqa}
 }
 ```
 
 ---
 
 <p align="center">
-  <sub>Built by <a href="https://github.com/royxlead">Sourav Roy</a> · Founding AI/ML Engineer · Yuga AI</sub>
+  <sub>Built by <a href="https://github.com/royxforge">Sourav Roy</a> · Artificial Intelligence Engineer · Accure Inc.</sub>
 </p>
