@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it as below."
+authors:
+  - family-names: Roy
+    given-names: Sourav
+    email: royxforge@proton.me
+    orcid: ""
+title: "MedVQA: Multimodal Medical Visual Question Answering"
+version: 0.2.0
+date-released: 2026-07-20
+url: "https://github.com/royxforge/multimodal-medical-vqa"
+repository-code: "https://github.com/royxforge/multimodal-medical-vqa"
+license: MIT
+keywords:
+  - medical VQA
+  - vision-language fusion
+  - QLoRA
+  - Monte Carlo Dropout
+  - clinical AI
+  - cross-attention
