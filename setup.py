@@ -14,7 +14,7 @@ with open("requirements.txt", encoding="utf-8") as f:
 
 setup(
     name="medvqa",
-    version="0.1.0",
+    version="0.3.0",
     description="Multimodal Medical Visual Question Answering System",
     long_description=long_description,
     long_description_content_type="text/markdown",

@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [0.3.0] - 2026-07-20
+
+### Changed
+
+- **Git remote URL**: Updated from `royxlead/multimodal-medical-vqa.git` to `royxforge/multimodal-medical-vqa.git` to reflect the permanent repository home under the royxforge GitHub organization.
+
+---
+
 ## [Unreleased]
 
 ### Added
