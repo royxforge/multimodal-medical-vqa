@@ -3,7 +3,7 @@ message: "If you use this software in your research, please cite it as below."
 authors:
   - family-names: Roy
     given-names: Sourav
-    email: royxforge@proton.me
+    email: royxforge@gmail.com
     orcid: ""
 title: "MedVQA: Multimodal Medical Visual Question Answering"
 version: 0.2.0

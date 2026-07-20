@@ -19,7 +19,7 @@ guidelines and instructions for contributing.
 
 This project and everyone participating in it is governed by our
 [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to
-uphold this code. Please report unacceptable behavior to royxforge@proton.me.
+uphold this code. Please report unacceptable behavior to royxforge@gmail.com.
 
 ## Getting Started
 

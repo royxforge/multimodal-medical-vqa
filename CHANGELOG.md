@@ -33,7 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
-- Merge conflict resolution between two independent initial commits. The repository history shows two initialization paths with distinct author email addresses (royxlead@proton.me and royxforge@proton.me); one path contributed the LICENSE file while the other contributed the full source tree. These were reconciled in a merge commit. This resolution is inferred from the available commit ancestry; the merge message itself did not specify the conflict details. - 2026-06-15
+- Merge conflict resolution between two independent initial commits. The repository history shows two initialization paths with distinct author email addresses (royxlead@proton.me and royxforge@gmail.com); one path contributed the LICENSE file while the other contributed the full source tree. These were reconciled in a merge commit. This resolution is inferred from the available commit ancestry; the merge message itself did not specify the conflict details. - 2026-06-15
 
 ### Added
 
