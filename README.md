@@ -644,7 +644,7 @@ training:
 
 - [Production Drift Detection](https://github.com/royxforge/production-drift-detection) - The confidence monitoring and entropy tracking in MedVQA's ConfidenceEstimator shares methodology with the production drift monitoring system. Temperature scaling and MC Dropout are directly ported from the confidence research there.
 - [Loss Landscape Analysis](https://github.com/royxforge/loss-landscape-analysis) - MedVQA's closed-ended loss uses BCE with label smoothing, not MSE. The gradient saturation analysis in that work is the direct motivation for this choice on the yes/no classification head.
-- [UniTSFM](https://github.com/royxforge/uniftsm) - The calibrated-confidence pattern (temperature scaling, uncertainty flagging) maps onto UniTSFM's forecast-interval construction for high-stakes domains like clinical time series.
+- [Unified Time Series Foundation Model](https://github.com/royxforge/unified-time-series-foundation-model) - The calibrated-confidence pattern (temperature scaling, uncertainty flagging) maps onto UniTSFM's forecast-interval construction for high-stakes domains like clinical time series.
 
 ---
 
