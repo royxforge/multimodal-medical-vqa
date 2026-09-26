@@ -67,8 +67,7 @@ class MedicalAugmentationPipeline:
                 p=p,
             ),
             A.RandomResizedCrop(
-                height=image_size,
-                width=image_size,
+                size=(image_size, image_size),
                 scale=(crop_scale, 1.0),
                 ratio=(0.9, 1.1),  # Keep near-square crops
                 p=p,
