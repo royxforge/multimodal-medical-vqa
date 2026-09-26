@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-26
+
 ### Fixed
 
 - **Anatomy-preserving preprocessing**: `MedicalImagePreprocessor.__call__` now letterboxes (aspect-ratio-preserving) as the class docstring requires; the previous `Resize + CenterCrop` distorted and cropped medical images. The old crop behaviour remains available as `preprocessor.crop_transform` (opt-in) for reproducing prior comparisons.
@@ -33,6 +35,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ---
 
 ## [Unreleased]
+
+## [0.4.0] - 2026-09-26
 
 ### Added
 
