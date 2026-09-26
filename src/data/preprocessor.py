@@ -37,19 +37,28 @@ class MedicalImagePreprocessor:
         self.mean = mean
         self.std = std
 
-        # Base transform: resize and normalize only
+        # Base transform: aspect-preserving letterbox resize then normalize.
+        # Resize+CenterCrop (previous behaviour) distorts and crops anatomy,
+        # which the class docstring explicitly warns against.
         self.base_transform = T.Compose([
-            T.Resize(image_size, interpolation=T.InterpolationMode.BICUBIC),
-            T.CenterCrop(image_size),
+            T.Lambda(lambda x: self.letterbox_resize(x)),
             T.ToTensor(),
             T.Normalize(mean=mean, std=std),
         ])
 
         # Transform without normalization (for Grad-CAM visualization)
         self.unnormalized_transform = T.Compose([
+            T.Lambda(lambda x: self.letterbox_resize(x)),
+            T.ToTensor(),
+        ])
+
+        # Optional opt-in crop-based transform, for callers that want the
+        # legacy behaviour (e.g. comparing against prior results).
+        self.crop_transform = T.Compose([
             T.Resize(image_size, interpolation=T.InterpolationMode.BICUBIC),
             T.CenterCrop(image_size),
             T.ToTensor(),
+            T.Normalize(mean=mean, std=std),
         ])
 
     def __call__(self, image: Image.Image) -> torch.Tensor:

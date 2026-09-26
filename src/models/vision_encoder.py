@@ -9,10 +9,25 @@ is unavailable (e.g., access restrictions).
 """
 
 from typing import Optional
+import os
 
 import torch
 import torch.nn as nn
 from transformers import AutoModel
+
+
+def trust_remote_code_enabled() -> bool:
+    """Explicit opt-in for checkpoints that ship custom modelling code.
+
+    Defaults to ``False``: loading arbitrary remote code from a model repo
+    executes it in-process. Set ``MEDVQA_TRUST_REMOTE_CODE=1`` when using a
+    checkpoint that genuinely requires it (e.g. BioViL-T).
+    """
+    return os.environ.get("MEDVQA_TRUST_REMOTE_CODE", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
 
 
 class BioViLTEncoder(nn.Module):
@@ -54,7 +69,7 @@ class BioViLTEncoder(nn.Module):
         try:
             self.encoder = AutoModel.from_pretrained(
                 model_name,
-                trust_remote_code=True,  # BioViL-T requires custom code
+                trust_remote_code=trust_remote_code_enabled(),
             )
             print(f"[OK] Loaded vision encoder from {model_name}")
         except Exception as e:

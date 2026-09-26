@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **Anatomy-preserving preprocessing**: `MedicalImagePreprocessor.__call__` now letterboxes (aspect-ratio-preserving) as the class docstring requires; the previous `Resize + CenterCrop` distorted and cropped medical images. The old crop behaviour remains available as `preprocessor.crop_transform` (opt-in) for reproducing prior comparisons.
+- **Generation config**: `LanguageModel.generate` no longer combines beam search (`num_beams>1`) with `do_sample=True` (a `ValueError` in HF `generate`); beam mode is greedy/deterministic and logs when `temperature`/`top_p` are ignored, sampling mode keeps them. Placeholder `input_ids`/`attention_mask` lengths now match `inputs_embeds`.
+- **MC-Dropout honesty**: `MonteCarloDropout.sample` warns when no `nn.Dropout` modules exist or logits are identical across samples (fused-attention / dropout-free models produce degenerate uncertainty); the evaluator hoists one MC helper per run instead of constructing it per batch.
+- **Combined loss no longer double-counts yes/no questions**: with the closed head active, yes/no rows are excluded from the open-ended LM loss (a precomputed scalar `lm_loss` covering all rows is overridden and the open loss is recomputed per row). `open_ended_loss` gained a `reduction="none"` mode whose `"mean"` mode matches PyTorch's masked mean exactly. Covered by `tests/test_losses.py` (6 tests).
+- **`wandb` is now an optional import** in `src/training/trainer.py` (media logging skips instead of failing when the package is absent), so `src.training.losses` imports without it.
+- **API hardening** (from Phase 1): explicit CORS allowlist with `credentials=False`, `predict_get(image_path)` removed/jailed, upload size+magic-byte checks, `trust_remote_code=False` for local vision encoders.
+- **README honesty**: headline claims now state that CLIP ViT-L/14 (not BioViL-T) is the default encoder and that MC-Dropout measures only dropout-contributed uncertainty.
+
+### Changed (breaking)
+
+- Default preprocessing output changes from crop-based to letterbox-based tensors; re-run baseline metrics before comparing against historical numbers.
+
+---
+
 ## [0.3.0] - 2026-07-20
 
 ### Changed

@@ -46,6 +46,35 @@ class TestMedicalImagePreprocessor:
         letterboxed = self.preprocessor.letterbox_resize(image)
         assert letterboxed.size == (224, 224)
 
+    def test_call_preserves_aspect_ratio(self):
+        """__call__ must letterbox (not crop/distort) so anatomy is preserved.
+
+        A 512x256 image scaled to fit 224x224 leaves grey bars top/bottom
+        (content 224x112). A distortion via Resize+CenterCrop would fill the
+        frame edge-to-edge instead, leaving no grey padding.
+        """
+        image = Image.new("RGB", (512, 256), (255, 0, 0))
+        tensor = self.preprocessor(image)
+        assert tensor.shape == (3, 224, 224)
+
+        # Row 0 must be padding; row 112 is the red content's vertical centre
+        # (content height 112 centred in 224 -> rows 56..167).
+        top_pixel = tensor[:, 0, 112]
+        mid_pixel = tensor[:, 112, 112]
+
+        # Padding is the grey 128 fill, normalized with the configured stats.
+        grey = torch.tensor([128 / 255.0] * 3)
+        mean = torch.tensor(self.preprocessor.mean)
+        std = torch.tensor(self.preprocessor.std)
+        expected_padding = (grey - mean) / std
+        assert torch.allclose(top_pixel, expected_padding, atol=1e-3)
+
+        # Content is pure red, normalized: R strongly positive, G/B negative.
+        red = torch.tensor([1.0, 0.0, 0.0])
+        expected_content = (red - mean) / std
+        assert torch.allclose(mid_pixel, expected_content, atol=1e-3)
+        assert not torch.allclose(top_pixel, mid_pixel)
+
     def test_normalization_range(self):
         """Test that normalized values are roughly in [-2, 2]."""
         image = Image.new("RGB", (224, 224), (200, 150, 100))

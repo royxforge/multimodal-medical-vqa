@@ -10,8 +10,12 @@ Subclasses the HF Trainer to:
 from typing import Optional, Union
 
 import torch
-import wandb
 from transformers import Trainer, TrainingArguments
+
+try:
+    import wandb
+except ImportError:  # optional: only W&B media logging needs it
+    wandb = None
 
 from .losses import MedVQALoss
 
@@ -186,6 +190,10 @@ class MedVQATrainer(Trainer):
             eval_dataset: Dataset to sample from.
         """
         if eval_dataset is None:
+            return
+        if wandb is None:
+            # Media logging needs the optional 'wandb' package; skip instead
+            # of failing the training loop.
             return
 
         import random

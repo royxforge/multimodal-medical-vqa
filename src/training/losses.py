@@ -48,7 +48,10 @@ def closed_ended_loss(
 
 
 def open_ended_loss(
-    logits: torch.Tensor, labels: torch.Tensor, label_mask: Optional[torch.Tensor] = None
+    logits: torch.Tensor,
+    labels: torch.Tensor,
+    label_mask: Optional[torch.Tensor] = None,
+    reduction: str = "mean",
 ) -> torch.Tensor:
     """Causal language modeling loss for open-ended answer generation.
 
@@ -59,9 +62,13 @@ def open_ended_loss(
         logits: Model output logits (B, seq_len, vocab_size).
         labels: Target token IDs with -100 for masked positions (B, seq_len).
         label_mask: Optional additional mask (B, seq_len).
+        reduction: "mean" (legacy, mean over all valid tokens in the batch)
+            or "none" (one mean value per batch row, 0.0 for rows whose
+            labels are entirely -100). "none" lets callers exclude specific
+            rows before averaging.
 
     Returns:
-        Scalar loss tensor.
+        Scalar loss tensor ("mean") or a (B,) tensor ("none").
     """
     # Align labels if a visual token was prepended to logits
     if labels.shape[1] == logits.shape[1] - 1:
@@ -73,12 +80,28 @@ def open_ended_loss(
     shift_labels = labels[..., 1:].contiguous()
 
     # Flatten
+    batch_size = shift_labels.shape[0]
     shift_logits = shift_logits.view(-1, shift_logits.size(-1))
     shift_labels = shift_labels.view(-1)
 
     # Standard cross-entropy (ignores -100 positions automatically)
-    loss = F.cross_entropy(shift_logits.float(), shift_labels, ignore_index=-100, reduction="mean")
-    return loss
+    per_token = F.cross_entropy(
+        shift_logits.float(), shift_labels, ignore_index=-100, reduction="none"
+    )
+    valid = (shift_labels != -100).float()
+
+    if reduction == "none":
+        per_token = per_token.view(batch_size, -1)
+        valid = valid.view(batch_size, -1)
+        sums = (per_token * valid).sum(dim=1)
+        counts = valid.sum(dim=1)
+        return torch.where(counts > 0, sums / counts.clamp(min=1.0), torch.zeros_like(sums))
+
+    # Match torch's reduction="mean": sum over valid tokens / valid count
+    # (per_token.mean() would dilute by the -100 masked positions).
+    total = per_token.sum()
+    count = valid.sum()
+    return total / count if count > 0 else total
 
 
 def contrastive_loss(
@@ -165,7 +188,9 @@ class MedVQALoss(nn.Module):
         """Compute combined loss for a batch.
 
         Closed-ended loss is applied only to yes/no questions (where
-        is_yesno == 1). Open-ended loss is applied to all questions.
+        is_yesno == 1). When the closed head contributes, open-ended loss is
+        applied to the remaining (open-ended) questions only - yes/no rows are
+        excluded so they are never counted in both branches.
 
         Args:
             logits: Model LM logits (B, seq_len, vocab_size).
@@ -187,10 +212,20 @@ class MedVQALoss(nn.Module):
         total_loss = 0.0
         losses = {}
 
+        # Yes/no rows are trained through the closed-ended head below. When
+        # that head contributes they must be excluded from the open-ended LM
+        # loss, otherwise every yes/no question is counted twice (once as
+        # classification, once as language modelling) despite the alpha
+        # weighting implying disjoint groups.
+        yesno_mask = (
+            (is_yesno > 0).float()
+            if is_yesno is not None
+            else torch.zeros(logits.shape[0], device=logits.device)
+        )
+
         # Closed-ended loss (yes/no questions) using the classification head
         if yesno_logits is not None:
             # Only compute closed-ended loss for yes/no questions
-            yesno_mask = (is_yesno > 0).float()  # (B,)
 
             if answer_labels is not None:
                 # Mask to only use yes/no questions (-1 means not yes/no)
@@ -226,8 +261,17 @@ class MedVQALoss(nn.Module):
             losses["closed_loss"] = closed_loss
             total_loss += self.closed_ended_alpha * closed_loss
 
-        # Open-ended loss (all questions, using LM)
-        open_loss = lm_loss if lm_loss is not None else open_ended_loss(logits, labels)
+        # Open-ended loss (open-ended questions only when the closed head ran;
+        # with no closed head the yes/no rows are trained solely via the LM
+        # and must stay in).
+        if yesno_logits is not None and yesno_mask.sum().item() > 0:
+            # Precomputed `lm_loss` is a batch scalar covering every row, so it
+            # cannot be un-mixed here: recompute per row and drop yes/no rows.
+            per_row = open_ended_loss(logits, labels, reduction="none")
+            keep = 1.0 - yesno_mask
+            open_loss = (per_row * keep).sum() / keep.sum().clamp(min=1.0)
+        else:
+            open_loss = lm_loss if lm_loss is not None else open_ended_loss(logits, labels)
         losses["open_loss"] = open_loss
         total_loss += (1 - self.closed_ended_alpha) * open_loss
 

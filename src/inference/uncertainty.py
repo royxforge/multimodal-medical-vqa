@@ -19,6 +19,13 @@ class MonteCarloDropout:
     Runs multiple forward passes with dropout active to estimate
     prediction uncertainty. Higher variance = less certain.
 
+    Limitation: this only re-enables ``nn.Dropout`` modules. Transformers
+    using fused attention kernels (FlashAttention-2 / SDPA) or models
+    without dropout modules (e.g. some Mistral configs) produce *identical*
+    samples, so the mutual information collapses to 0. ``sample()`` warns
+    when zero variance is observed so callers do not silently report
+    "certain" predictions; entropy-based confidence remains valid.
+
     Args:
         model: The MedVQA model.
         num_samples: Number of MC samples (default: 20).
@@ -28,11 +35,14 @@ class MonteCarloDropout:
         self.model = model
         self.num_samples = num_samples
 
-    def _enable_dropout(self):
-        """Enable dropout layers for MC sampling."""
+    def _enable_dropout(self) -> int:
+        """Enable dropout layers for MC sampling. Returns count enabled."""
+        enabled = 0
         for module in self.model.modules():
             if isinstance(module, torch.nn.Dropout):
                 module.train()
+                enabled += 1
+        return enabled
 
     @torch.no_grad()
     def sample(
@@ -53,7 +63,15 @@ class MonteCarloDropout:
             Dict with predictions and logits arrays.
         """
         self.model.eval()
-        self._enable_dropout()
+        n_dropout = self._enable_dropout()
+        if n_dropout == 0:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "MonteCarloDropout found no nn.Dropout modules: samples will "
+                "be identical and mutual information will be 0. Consider "
+                "temperature scaling or entropy-based uncertainty instead."
+            )
 
         all_logits = []
         all_predictions = []
@@ -73,9 +91,22 @@ class MonteCarloDropout:
             all_logits.append(last_logits.cpu().numpy())
             all_predictions.append(pred.cpu().numpy())
 
+        logits_stack = np.stack(all_logits, axis=1)  # (1, N, vocab_size)
+        # Epistemic variance proxy: spread of the sample argmaxes. If every
+        # sample agrees, MC-Dropout contributed no information.
+        if self.num_samples > 1 and np.all(all_predictions[0] == all_predictions[0][0]):
+            import logging
+
+            if not np.any(np.diff(logits_stack, axis=1) != 0):
+                logging.getLogger(__name__).warning(
+                    "MC-Dropout produced identical logits across %d samples; "
+                    "uncertainty estimates are degenerate (dropout inactive).",
+                    self.num_samples,
+                )
+
         return {
             "predictions": np.stack(all_predictions, axis=1),  # (1, N)
-            "logits": np.stack(all_logits, axis=1),  # (1, N, vocab_size)
+            "logits": logits_stack,  # (1, N, vocab_size)
         }
 
     def compute_uncertainty(

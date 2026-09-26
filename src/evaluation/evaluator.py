@@ -73,6 +73,12 @@ class Evaluator:
 
             mc_dropout_module = _MCDropout
 
+        # Hoist the MC-Dropout helper out of the batch loop: constructing it
+        # per batch is wasteful and each instance re-scans modules.
+        mc_dropout = None
+        if use_mc_dropout and mc_dropout_module is not None:
+            mc_dropout = mc_dropout_module(self.model, mc_samples)
+
         for batch in tqdm(dataloader, desc=f"Evaluating {split_name}"):
             images = batch["images"].to(self.device)
             input_ids = batch["input_ids"].to(self.device)
@@ -93,8 +99,7 @@ class Evaluator:
             all_is_yesno.extend(batch["is_yesno"].cpu().numpy())
 
             # MC Dropout confidence estimation
-            if use_mc_dropout and mc_dropout_module is not None:
-                mc_dropout = mc_dropout_module(self.model, mc_samples)
+            if mc_dropout is not None:
                 mc_samples_batch = mc_dropout.sample(images, input_ids, attention_mask)
                 uncertainty = mc_dropout.compute_uncertainty(
                     mc_samples_batch["predictions"], mc_samples_batch["logits"]

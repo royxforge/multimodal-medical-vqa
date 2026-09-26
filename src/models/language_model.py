@@ -66,7 +66,7 @@ class MistralQLoRA(nn.Module):
             quantization_config=bnb_config,
             device_map="auto",
             torch_dtype=torch.bfloat16,
-            trust_remote_code=True,
+            trust_remote_code=False,
             use_cache=not gradient_checkpointing,
         )
 
@@ -194,15 +194,28 @@ class MistralQLoRA(nn.Module):
         Returns:
             Generated token IDs (B, gen_len).
         """
+        # Beam search and sampling are mutually exclusive in HF generate():
+        # combining num_beams>1 with do_sample=True raises a ValueError.
+        # Choose greedy/beam decoding when num_beams > 1, sampling otherwise.
+        use_sampling = num_beams <= 1
+        if not use_sampling and temperature != 1.0:
+            # temperature/top_p are ignored in beam mode; flag the mismatch
+            # rather than silently dropping the caller's intent.
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "num_beams=%d ignores temperature/top_p (beam search is "
+                "deterministic); pass num_beams=1 to sample.",
+                num_beams,
+            )
+
         with torch.no_grad():
-            # Build initial inputs for generation
+            # Build initial inputs for generation.
+            # When using custom embeddings, HF generate() needs consistent
+            # input_ids and attention_mask lengths to match inputs_embeds.
             if inputs_embeds is not None:
-                # When using custom embeddings, we still need input_ids as a
-                # reference for the model's generate() method.
-                # We create a dummy input_ids of the right length.
                 batch_size = inputs_embeds.shape[0]
                 seq_len = inputs_embeds.shape[1]
-                # Use the first token's ID repeated as a placeholder
                 placeholder_ids = torch.full(
                     (batch_size, seq_len),
                     self.model.config.eos_token_id or 0,
@@ -210,20 +223,29 @@ class MistralQLoRA(nn.Module):
                     dtype=torch.long,
                 )
                 input_ids = placeholder_ids
+                if attention_mask is None or attention_mask.shape != (batch_size, seq_len):
+                    attention_mask = torch.ones(
+                        (batch_size, seq_len),
+                        device=inputs_embeds.device,
+                        dtype=torch.long,
+                    )
 
-            outputs = self.model.generate(
+            generation_kwargs = dict(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
                 inputs_embeds=inputs_embeds,
                 max_new_tokens=max_new_tokens,
                 num_beams=num_beams,
-                do_sample=True,
-                temperature=temperature,
-                top_p=top_p,
+                do_sample=use_sampling,
                 repetition_penalty=repetition_penalty,
                 pad_token_id=self.model.config.eos_token_id,
                 **kwargs,
             )
+            if use_sampling:
+                generation_kwargs["temperature"] = temperature
+                generation_kwargs["top_p"] = top_p
+
+            outputs = self.model.generate(**generation_kwargs)
         return outputs
 
     def merge_and_unload(self):

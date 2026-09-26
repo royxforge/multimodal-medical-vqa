@@ -57,8 +57,8 @@ Existing Medical VQA benchmarks show a consistent gap: general-purpose vision-la
 
 MedVQA provides:
 
-1. **Cross-attention vision-language fusion** - BioViL-T visual patches attend to question tokens for fine-grained image-text alignment, with QLoRA fine-tuned Mistral-7B (~40M trainable params) generating the answer
-2. **Calibrated confidence** - Monte Carlo Dropout (20 samples) for epistemic uncertainty, post-hoc temperature scaling via L-BFGS, and automatic uncertainty flagging below configurable thresholds
+1. **Cross-attention vision-language fusion** - vision patches (CLIP ViT-L/14 by default; switch to BioViL-T for medical pretraining, see `configs/default_config.yaml`) attend to question tokens for fine-grained image-text alignment, with QLoRA fine-tuned Mistral-7B (~40M trainable params) generating the answer
+2. **Calibrated confidence** - Monte Carlo Dropout (20 samples) for epistemic uncertainty, post-hoc temperature scaling via L-BFGS, and automatic uncertainty flagging below configurable thresholds. MC-Dropout only measures what dropout contributes: if the backbone exposes no `nn.Dropout` (common with fused-attention Mistral builds) `sample()` logs a warning and the entropy/temperature signals remain the meaningful ones.
 3. **Grad-CAM explainability** - Gradient-weighted heatmaps overlaid on input images, localizing the image regions that drove each answer (e.g., pleural margin for pneumothorax questions, not the cardiac silhouette)
 4. **Dual inference modes** - Local GPU mode (full model, Grad-CAM available) and API mode (GPT-4o / Claude / Gemini, no GPU required), with a FastAPI backend and Next.js 16 clinical dashboard
 
@@ -189,8 +189,8 @@ Medical Image
 
 ## Model Design
 
-### BioViL-T Vision Encoder
-- Dual model support: loads BioViL-T with automatic CLIP ViT-L/14 fallback
+### Vision Encoder (BioViL-T / CLIP)
+- Dual model support: **defaults to CLIP ViT-L/14** (tested, works everywhere); set `model.vision_encoder_name` to `microsoft/BiomedVLP-BioViL-T` for medical pretraining (needs the extra vision-extraction handling noted in `configs/default_config.yaml`)
 - Projection head: LayerNorm → Linear(1024→4096) → GELU → Dropout
 - Grad-CAM hooks registered on the last transformer layer
 - Progressive unfreezing: top K layers for domain adaptation

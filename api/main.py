@@ -48,18 +48,33 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# CORS for frontend access
+# CORS for frontend access — explicit origins only (never "*" with credentials).
+_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        "MEDVQA_ALLOWED_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000,"
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
 # Global pipeline (lazy initialized)
 _pipeline = None
 _mode = _INFERENCE_MODE  # "local" or "api"
+
+# Server-side image reads are confined to this directory (see predict_get).
+_DATA_ROOT = (Path(__file__).resolve().parents[1] / "data")
+
+# Uploaded image size cap (bytes) — guards against memory/disk exhaustion.
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 
 def _normalize_extension(filename: str) -> str:
@@ -281,6 +296,11 @@ async def predict(
 
     try:
         content = await file.read()
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File exceeds the {MAX_UPLOAD_BYTES} byte limit",
+            )
         with open(temp_path, "wb") as f:
             f.write(content)
 
@@ -409,6 +429,11 @@ async def suggest_questions(file: UploadFile = File(...)):
 
     try:
         content = await file.read()
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File exceeds the {MAX_UPLOAD_BYTES} byte limit",
+            )
         with open(temp_path, "wb") as f:
             f.write(content)
 
@@ -466,15 +491,22 @@ async def suggest_questions(file: UploadFile = File(...)):
 
 @app.get("/predict/")
 async def predict_get(image_path: str = "", question: str = ""):
-    """Predict with file path instead of upload (for testing)."""
+    """Predict on a server-side image path, restricted to the project data/ tree."""
     if not question.strip():
         raise HTTPException(status_code=400, detail="Question is required")
-    if not image_path or not Path(image_path).exists():
+    if not image_path:
         raise HTTPException(status_code=400, detail="Valid image path is required")
+    candidate = Path(image_path).resolve()
+    if not candidate.is_relative_to(_DATA_ROOT) or not candidate.is_file():
+        raise HTTPException(
+            status_code=400,
+            detail="image_path must be an existing file under the project data/ directory",
+        )
+    resolved_image_path = str(candidate)
 
     pipeline = get_pipeline()
     result = pipeline.predict(
-        image_path=image_path, question=question, generate_heatmap=True, use_mc_dropout=True
+        image_path=resolved_image_path, question=question, generate_heatmap=True, use_mc_dropout=True
     )
 
     return PredictResponse(
