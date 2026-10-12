@@ -45,7 +45,7 @@ for i, arg in enumerate(sys.argv):
 app = FastAPI(
     title="MedVQA API",
     description="Multimodal Medical Visual Question Answering API",
-    version="0.1.0",
+    version="0.4.0",
 )
 
 # CORS for frontend access — explicit origins only (never "*" with credentials).
