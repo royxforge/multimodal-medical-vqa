@@ -6,8 +6,8 @@ authors:
     email: royxforge@gmail.com
     orcid: ""
 title: "MedVQA: Multimodal Medical Visual Question Answering"
-version: 0.2.0
-date-released: 2026-07-20
+version: 0.5.0
+date-released: 2026-10-13
 url: "https://github.com/royxforge/multimodal-medical-vqa"
 repository-code: "https://github.com/royxforge/multimodal-medical-vqa"
 license: MIT

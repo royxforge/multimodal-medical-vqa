@@ -8,8 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-13
+
+### Added
+
+- **`POST /predict-batch`**: answer one clinical question across several images in a single request (screening a study or a folder of images no longer costs one round trip per image). Up to 16 images per request; `questions` optionally supplies a per-image question as a JSON array matched by position, falling back to the shared `question`. Each item is processed independently and reported as `ok` with its full prediction or `error` with the reason, so a single unsupported or corrupt file cannot discard the remaining results. The response carries `count`, `succeeded`, `failed` and the per-item `results`.
+
 ### Fixed
 
+- **Temp upload filenames collided within the same second**: `POST /predict` wrote uploads to `data/temp/upload_<unix_seconds>.<ext>`, so two concurrent requests in the same second shared a path and could overwrite each other's bytes mid-inference. Names now include a UUID. The new batch endpoint would have hit this on every multi-image request.
 - **Version consistency**: `src.__version__` and the API `FastAPI(version=...)` reported `0.1.0` while `setup.py` shipped `0.4.0`; both now report the released version.
 
 ## [0.4.0] - 2026-09-26

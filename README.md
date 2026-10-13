@@ -223,7 +223,7 @@ Three components combined via MedVQALoss:
 multimodal-medical-vqa/
 |
 +-- api/                              # REST API and demo servers
-|   +-- main.py                       # FastAPI application (/predict, /health, /metrics)
+|   +-- main.py                       # FastAPI application (/predict, /predict-batch, /health, /metrics)
 |   +-- demo.py                       # Gradio web UI for interactive testing
 |   +-- schemas.py                    # Pydantic request/response models
 |
@@ -539,6 +539,59 @@ Metrics, loss components, and sample predictions log to Weights & Biases by defa
   ]
 }
 ```
+
+### POST /predict-batch
+
+**Request** (multipart/form-data):
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `files` | file[] | Yes | 1-16 medical images (JPEG, PNG, DICOM, NIfTI) |
+| `question` | string | Yes* | Clinical question applied to every image |
+| `questions` | string | No | JSON array overriding `question` per image, matched by position |
+| `conversation` | string | No | JSON array of prior `{"question", "answer"}` pairs |
+| `patient_context` | string | No | JSON with `{"age", "sex", "history", "symptoms"}` |
+| `roi` | string | No | JSON `{"x", "y", "w", "h"}` normalized 0-1 |
+
+*Required unless `questions` supplies non-empty questions; more than
+`MAX_BATCH_SIZE` (16) images is a `400`.
+
+**Response:**
+
+```json
+{
+  "count": 2,
+  "succeeded": 1,
+  "failed": 1,
+  "results": [
+    {
+      "filename": "scan_01.png",
+      "status": "ok",
+      "result": {
+        "answer": "No evidence of pneumothorax.",
+        "confidence": 0.92,
+        "uncertainty_flag": false,
+        "heatmap_path": null,
+        "latency_ms": 1180.4,
+        "predictive_entropy": 0.31,
+        "follow_up_questions": []
+      },
+      "detail": null
+    },
+    {
+      "filename": "notes.txt",
+      "status": "error",
+      "result": null,
+      "detail": "Unsupported file type: .txt. Allowed: {'.jpg', '.jpeg', '.png', '.dcm', '.nii', '.nii.gz'}"
+    }
+  ]
+}
+```
+
+Because failures are reported per item, a client can retry only the entries with
+`"status": "error"` instead of re-uploading the whole batch. Streaming a whole
+batch through the single-image endpoint remains the better choice when the
+images need different patient contexts.
 
 ### GET /health
 

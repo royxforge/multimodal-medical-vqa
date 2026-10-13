@@ -17,6 +17,7 @@ import os
 import re
 import sys
 import time
+import uuid
 from pathlib import Path
 
 import torch
@@ -28,6 +29,8 @@ from fastapi.responses import FileResponse
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from api.schemas import (
+    BatchItemResult,
+    BatchPredictResponse,
     HealthResponse,
     MetricsResponse,
     PredictResponse,
@@ -45,7 +48,7 @@ for i, arg in enumerate(sys.argv):
 app = FastAPI(
     title="MedVQA API",
     description="Multimodal Medical Visual Question Answering API",
-    version="0.4.0",
+    version="0.5.0",
 )
 
 # CORS for frontend access — explicit origins only (never "*" with credentials).
@@ -75,6 +78,9 @@ _DATA_ROOT = (Path(__file__).resolve().parents[1] / "data")
 
 # Uploaded image size cap (bytes) — guards against memory/disk exhaustion.
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+
+# Max images accepted per /predict-batch request.
+MAX_BATCH_SIZE = 16
 
 
 def _normalize_extension(filename: str) -> str:
@@ -232,20 +238,22 @@ async def health_check():
     )
 
 
-@app.post("/predict", response_model=PredictResponse)
-async def predict(
-    file: UploadFile = File(...),
-    question: str = Form(""),
-    conversation: str = Form("[]"),
-    patient_context: str = Form("{}"),
-    roi: str = Form(""),
-):
-    """Predict answer for a medical image and clinical question.
+async def _predict_single_image(
+    file: UploadFile,
+    question: str,
+    conversation: str,
+    patient_context: str,
+    roi: str,
+) -> PredictResponse:
+    """Run the full inference pipeline for one uploaded image.
 
-    Accepts a multipart upload with an image file, a question string,
-    optional conversation history (JSON array of previous Q&A pairs),
-    optional patient context (JSON with age, sex, history, symptoms),
-    and optional ROI region (JSON with x, y, w, h normalized 0-1).
+    Shared by ``/predict`` and ``/predict-batch`` so both routes use identical
+    validation, prompt construction, and follow-up generation. ``question`` is
+    a plain string here (the routes handle multipart parsing) and
+    ``conversation``/``patient_context``/``roi`` are the raw JSON form strings.
+
+    Raises:
+        HTTPException: 400 for invalid input, 413 when the upload is too large.
     """
     if not question.strip():
         raise HTTPException(status_code=400, detail="Question is required")
@@ -292,7 +300,9 @@ async def predict(
     # Save uploaded file temporarily
     temp_dir = Path("data/temp")
     temp_dir.mkdir(parents=True, exist_ok=True)
-    temp_path = temp_dir / f"upload_{int(time.time())}{ext}"
+    # Unique name per request: a timestamp alone collides when several uploads
+    # land in the same second (e.g. concurrent /predict-batch items).
+    temp_path = temp_dir / f"upload_{uuid.uuid4().hex}{ext}"
 
     try:
         content = await file.read()
@@ -404,6 +414,101 @@ async def predict(
             temp_path.unlink()
 
     return response
+
+
+@app.post("/predict", response_model=PredictResponse)
+async def predict(
+    file: UploadFile = File(...),
+    question: str = Form(""),
+    conversation: str = Form("[]"),
+    patient_context: str = Form("{}"),
+    roi: str = Form(""),
+):
+    """Predict answer for a medical image and clinical question.
+
+    Accepts a multipart upload with an image file, a question string,
+    optional conversation history (JSON array of previous Q&A pairs),
+    optional patient context (JSON with age, sex, history, symptoms),
+    and optional ROI region (JSON with x, y, w, h normalized 0-1).
+    """
+    return await _predict_single_image(file, question, conversation, patient_context, roi)
+
+
+@app.post("/predict-batch", response_model=BatchPredictResponse)
+async def predict_batch(
+    files: list[UploadFile] = File(..., description="One or more medical images"),
+    question: str = Form("", description="Question applied to every image"),
+    questions: str = Form(
+        "", description="Optional JSON array overriding the question per image, in order"
+    ),
+    conversation: str = Form("[]"),
+    patient_context: str = Form("{}"),
+    roi: str = Form(""),
+):
+    """Answer the same clinical question across several images in one request.
+
+    Useful for triaging a study or a folder of images without paying the
+    per-request round trip. Each image is processed independently; a failure in
+    one item is reported in that item's ``detail`` field instead of failing the
+    whole request, so a single bad file cannot discard the remaining results.
+
+    ``questions`` optionally supplies a per-image question as a JSON array of
+    strings matched to ``files`` by position; entries that are missing or empty
+    fall back to the shared ``question`` field.
+    """
+    if not files:
+        raise HTTPException(status_code=400, detail="At least one image file is required")
+    if len(files) > MAX_BATCH_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"At most {MAX_BATCH_SIZE} images per batch request (got {len(files)})",
+        )
+
+    per_item_questions: list[str] = []
+    if questions.strip():
+        try:
+            parsed = json.loads(questions)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="questions must be a JSON array of strings")
+        if not isinstance(parsed, list):
+            raise HTTPException(status_code=400, detail="questions must be a JSON array of strings")
+        per_item_questions = [str(q) for q in parsed]
+
+    if not question.strip() and not any(q.strip() for q in per_item_questions):
+        raise HTTPException(status_code=400, detail="Question is required")
+
+    results: list[BatchItemResult] = []
+    for index, item in enumerate(files):
+        filename = item.filename or f"image_{index}"
+        item_question = question
+        if index < len(per_item_questions) and per_item_questions[index].strip():
+            item_question = per_item_questions[index]
+
+        try:
+            result = await _predict_single_image(
+                item, item_question, conversation, patient_context, roi
+            )
+            results.append(BatchItemResult(filename=filename, status="ok", result=result))
+        except HTTPException as exc:
+            results.append(
+                BatchItemResult(filename=filename, status="error", detail=str(exc.detail))
+            )
+        except Exception as exc:  # noqa: BLE001 - one bad image must not sink the batch
+            results.append(
+                BatchItemResult(
+                    filename=filename,
+                    status="error",
+                    detail=f"{type(exc).__name__}: {exc}",
+                )
+            )
+
+    succeeded = sum(1 for r in results if r.status == "ok")
+    return BatchPredictResponse(
+        count=len(results),
+        succeeded=succeeded,
+        failed=len(results) - succeeded,
+        results=results,
+    )
 
 
 @app.post("/suggest-questions", response_model=SuggestQuestionsResponse)

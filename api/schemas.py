@@ -51,6 +51,42 @@ class PredictResponse(BaseModel):
     )
 
 
+class BatchItemResult(BaseModel):
+    """Per-item outcome of a /predict-batch request.
+
+    Attributes:
+        filename: Name of the uploaded image this item refers to.
+        status: "ok" when inference succeeded, "error" otherwise.
+        result: The prediction, populated only when status is "ok".
+        detail: Error message, populated only when status is "error".
+    """
+
+    filename: str = Field(..., description="Name of the uploaded image this item refers to")
+    status: str = Field(..., description="'ok' when inference succeeded, 'error' otherwise")
+    result: Optional[PredictResponse] = Field(
+        None, description="Prediction payload, present when status is 'ok'"
+    )
+    detail: Optional[str] = Field(None, description="Error detail, present when status is 'error'")
+
+
+class BatchPredictResponse(BaseModel):
+    """Response model for the /predict-batch endpoint.
+
+    Attributes:
+        count: Number of items processed.
+        succeeded: Number of successfully answered items.
+        failed: Number of items that could not be answered.
+        results: Per-item outcomes, in request order.
+    """
+
+    count: int = Field(..., description="Number of items processed")
+    succeeded: int = Field(..., description="Number of successful predictions")
+    failed: int = Field(..., description="Number of failed items")
+    results: list[BatchItemResult] = Field(
+        default_factory=list, description="Per-item outcomes, in request order"
+    )
+
+
 class HealthResponse(BaseModel):
     """Response model for the /health endpoint.
 
