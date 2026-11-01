@@ -14,9 +14,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 pytest.importorskip("torch", reason="med-VQA API requires torch")
 pytest.importorskip("transformers", reason="med-VQA API requires transformers")
 
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
-from api import main as api_main  # noqa: E402
+from api import main as api_main
 
 
 def test_cors_origins_are_explicit_and_never_wildcard():

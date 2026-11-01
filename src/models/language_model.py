@@ -7,7 +7,6 @@ trainable parameters.
 Reference: QLoRA (Dettmers et al., 2023) — Efficient finetuning of quantized LLMs.
 """
 
-from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -36,11 +35,11 @@ class MistralQLoRA(nn.Module):
         self,
         model_name: str = "mistralai/Mistral-7B-Instruct-v0.3",
         load_in_4bit: bool = True,
-        bnb_config: Optional[dict] = None,
+        bnb_config: dict | None = None,
         lora_r: int = 16,
         lora_alpha: int = 32,
         lora_dropout: float = 0.05,
-        lora_target_modules: Optional[list[str]] = None,
+        lora_target_modules: list[str] | None = None,
         gradient_checkpointing: bool = True,
     ):
         super().__init__()
@@ -131,10 +130,10 @@ class MistralQLoRA(nn.Module):
 
     def forward(
         self,
-        input_ids: Optional[torch.LongTensor] = None,
-        attention_mask: Optional[torch.FloatTensor] = None,
-        labels: Optional[torch.LongTensor] = None,
-        inputs_embeds: Optional[torch.FloatTensor] = None,
+        input_ids: torch.LongTensor | None = None,
+        attention_mask: torch.FloatTensor | None = None,
+        labels: torch.LongTensor | None = None,
+        inputs_embeds: torch.FloatTensor | None = None,
         **kwargs,
     ) -> dict:
         """Forward pass through the language model.
@@ -165,9 +164,9 @@ class MistralQLoRA(nn.Module):
 
     def generate(
         self,
-        input_ids: Optional[torch.LongTensor] = None,
-        attention_mask: Optional[torch.FloatTensor] = None,
-        inputs_embeds: Optional[torch.FloatTensor] = None,
+        input_ids: torch.LongTensor | None = None,
+        attention_mask: torch.FloatTensor | None = None,
+        inputs_embeds: torch.FloatTensor | None = None,
         max_new_tokens: int = 64,
         num_beams: int = 4,
         temperature: float = 0.7,

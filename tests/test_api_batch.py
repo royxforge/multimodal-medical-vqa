@@ -16,9 +16,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 pytest.importorskip("torch", reason="med-VQA API requires torch")
 pytest.importorskip("transformers", reason="med-VQA API requires transformers")
 
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
-from api import main as api_main  # noqa: E402
+from api import main as api_main
 
 
 class _FakePipeline:
@@ -34,9 +34,8 @@ class _FakePipeline:
         self.seen_questions.append(question)
         # Uploads are persisted under a generated temp name, so faults are keyed
         # off file content rather than the original client-side filename.
-        if self._fail_on_bytes is not None:
-            if self._fail_on_bytes in Path(image_path).read_bytes():
-                raise RuntimeError("simulated inference failure")
+        if self._fail_on_bytes is not None and self._fail_on_bytes in Path(image_path).read_bytes():
+            raise RuntimeError("simulated inference failure")
         return SimpleNamespace(
             answer="No acute abnormality is visible.",
             confidence=0.91,

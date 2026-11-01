@@ -22,7 +22,9 @@ jobs:
           python-version: "3.11"
           cache: pip
       - name: Install package and development dependencies
-        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt && python -m pip install -e .
+        # pytest and ruff are invoked by the steps below but ship in neither
+        # requirements.txt nor the package's dependencies, so install them here.
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt pytest ruff && python -m pip install -e .
       - name: Compile source
         run: python -m compileall -q src api train.py
       - name: Run tests

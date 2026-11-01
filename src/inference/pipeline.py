@@ -11,7 +11,6 @@ Supports two modes:
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import torch
 
@@ -33,9 +32,9 @@ class PredictionResult:
     answer: str
     confidence: float
     uncertainty_flag: bool
-    heatmap_path: Optional[str] = None
+    heatmap_path: str | None = None
     latency_ms: float = 0.0
-    predictive_entropy: Optional[float] = None
+    predictive_entropy: float | None = None
     question: str = ""
 
 
@@ -68,15 +67,15 @@ class MedVQAPipeline:
 
     def __init__(
         self,
-        model: Optional[torch.nn.Module] = None,
-        text_preprocessor: Optional[object] = None,
-        image_preprocessor: Optional[object] = None,
-        gradcam: Optional[object] = None,
+        model: torch.nn.Module | None = None,
+        text_preprocessor: object | None = None,
+        image_preprocessor: object | None = None,
+        gradcam: object | None = None,
         device: str = "cuda",
         cache_vision: bool = True,
         uncertainty_threshold: float = 0.3,
-        temperature_scaler_path: Optional[str] = None,
-        api_llm_client: Optional[object] = None,
+        temperature_scaler_path: str | None = None,
+        api_llm_client: object | None = None,
     ):
         self.model = model
         self.text_preprocessor = text_preprocessor

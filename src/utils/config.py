@@ -6,7 +6,6 @@ object controlled the entire pipeline.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -122,7 +121,7 @@ class APIConfig:
     model: str = "gpt-4o"
     temperature: float = 0.7
     max_tokens: int = 256
-    api_key: Optional[str] = None
+    api_key: str | None = None
     ollama_base_url: str = "http://localhost:11434"
 
 
@@ -160,7 +159,7 @@ class TrainingConfig:
     use_contrastive_loss: bool = False
     contrastive_loss_weight: float = 0.1
     report_to: str = "wandb"
-    run_name: Optional[str] = None
+    run_name: str | None = None
     seed: int = 42
     output_dir: str = "experiments/medvqa_run"
 
@@ -176,7 +175,7 @@ class InferenceConfig:
     mc_dropout_samples: int = 20
     uncertainty_threshold: float = 0.3
     temperature_scaling: bool = True
-    temperature_scaler_path: Optional[str] = None
+    temperature_scaler_path: str | None = None
     cache_vision_outputs: bool = True
     max_new_tokens: int = 64
 

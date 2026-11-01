@@ -50,7 +50,7 @@ class MonteCarloDropout:
         images: torch.Tensor,
         input_ids: torch.LongTensor,
         attention_mask: torch.FloatTensor,
-        vision_outputs: Optional[dict[str, torch.Tensor]] = None,
+        vision_outputs: dict[str, torch.Tensor] | None = None,
     ) -> dict[str, np.ndarray]:
         """Run MC Dropout sampling.
 

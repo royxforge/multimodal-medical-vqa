@@ -7,10 +7,15 @@
   <img src="https://img.shields.io/badge/Mistral-7B-6366f1?style=flat-square" />
   <img src="https://img.shields.io/badge/Dataset-VQA--RAD-14b8a6?style=flat-square" />
   <img src="https://img.shields.io/badge/Frontend-Next.js%2016-000000?style=flat-square&logo=nextdotjs&logoColor=white" />
+  <a href="https://github.com/royxforge/multimodal-medical-vqa/actions/workflows/ci.yml"><img src="https://github.com/royxforge/multimodal-medical-vqa/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/License-MIT-6366f1?style=flat-square" />
 </p>
 
-> A research-grade system that answers clinical questions about medical images (X-rays, MRIs, CT scans, pathology slides) using cross-attention vision-language fusion, QLoRA fine-tuned Mistral-7B, Monte Carlo Dropout confidence estimation, and Grad-CAM explainability. Evaluated on VQA-RAD with GPT-4o baseline benchmarking.
+> **Clinical visual question answering with cross-attention vision-language fusion, a QLoRA-tuned Mistral-7B, MC-Dropout confidence and Grad-CAM localisation.** Ships the data pipeline, training loop, an API with a Next.js dashboard, and the evaluation code behind its own numbers. Research prototype — not validated for clinical use.
+>
+> **Result:** its GPT-4o baseline on VQA-RAD scores **56.36%** yes/no accuracy while abstaining on **41.5%** of questions — below CLIP zero-shot at ~58%, which is the point: VQA-RAD rewards visual grounding over recall.
+>
+> **Try it on CPU:** `pytest tests/ -q` (inference itself needs a GPU or a vision API key)
 
 > **⚠️ Research prototype - not validated for clinical use. Do not use for medical decision-making.**
 
@@ -697,7 +702,7 @@ training:
 
 - [Production Drift Detection](https://github.com/royxforge/production-drift-detection) - The confidence monitoring and entropy tracking in MedVQA's ConfidenceEstimator shares methodology with the production drift monitoring system. Temperature scaling and MC Dropout are directly ported from the confidence research there.
 - [Loss Landscape Analysis](https://github.com/royxforge/loss-landscape-analysis) - MedVQA's closed-ended loss uses BCE with label smoothing, not MSE. The gradient saturation analysis in that work is the direct motivation for this choice on the yes/no classification head.
-- [Unified Time Series Foundation Model](https://github.com/royxforge/unified-time-series-foundation-model) - The calibrated-confidence pattern (temperature scaling, uncertainty flagging) maps onto UniTSFM's forecast-interval construction for high-stakes domains like clinical time series.
+- [Unified Time Series Foundation Model](https://github.com/royxforge/uniftsm) - The calibrated-confidence pattern (temperature scaling, uncertainty flagging) maps onto UniTSFM's forecast-interval construction for high-stakes domains like clinical time series.
 
 ---
 

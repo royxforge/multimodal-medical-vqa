@@ -3,10 +3,10 @@ from .losses import MedVQALoss, closed_ended_loss, contrastive_loss, open_ended_
 from .trainer import MedVQATrainer
 
 __all__ = [
-    "MedVQATrainer",
     "MedVQALoss",
+    "MedVQATrainer",
     "closed_ended_loss",
-    "open_ended_loss",
     "contrastive_loss",
     "get_training_callbacks",
+    "open_ended_loss",
 ]

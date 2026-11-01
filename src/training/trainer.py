@@ -7,7 +7,7 @@ Subclasses the HF Trainer to:
 4. Integrate W&B logging
 """
 
-from typing import Optional, Union
+from typing import Union
 
 import torch
 from transformers import Trainer, TrainingArguments
@@ -129,8 +129,8 @@ class MedVQATrainer(Trainer):
         model: torch.nn.Module,
         inputs: dict[str, torch.Tensor],
         prediction_loss_only: bool,
-        ignore_keys: Optional[list[str]] = None,
-    ) -> tuple[Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor]]:
+        ignore_keys: list[str] | None = None,
+    ) -> tuple[torch.Tensor | None, torch.Tensor | None, torch.Tensor | None]:
         """Override prediction_step for generation during evaluation.
 
         Args:

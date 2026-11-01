@@ -247,7 +247,7 @@ class TestEndToEndTrainingPipeline:
 
     def test_data_pipeline(self, setup_data):
         """Test 1: Data loading produces correct shapes."""
-        subset, text_processor = setup_data
+        subset, _text_processor = setup_data
         sample = subset[0]
 
         assert "image" in sample, "Missing 'image' key"
@@ -264,7 +264,7 @@ class TestEndToEndTrainingPipeline:
 
     def test_forward_pass(self, tiny_model_and_data):
         """Test 2: Forward pass produces logits and loss."""
-        model, subset, tp, device = tiny_model_and_data
+        model, subset, _tp, device = tiny_model_and_data
         loader = torch.utils.data.DataLoader(subset, batch_size=2, collate_fn=collate_fn)
         batch = next(iter(loader))
 
@@ -293,7 +293,7 @@ class TestEndToEndTrainingPipeline:
 
     def test_loss_components(self, tiny_model_and_data):
         """Test 3: Combined loss with closed-ended and open-ended components."""
-        model, subset, tp, device = tiny_model_and_data
+        model, subset, _tp, device = tiny_model_and_data
         loader = torch.utils.data.DataLoader(subset, batch_size=4, collate_fn=collate_fn)
         batch = next(iter(loader))
 
@@ -336,7 +336,7 @@ class TestEndToEndTrainingPipeline:
 
     def test_backward_pass(self, tiny_model_and_data):
         """Test 4: Gradients flow backward through all components."""
-        model, subset, tp, device = tiny_model_and_data
+        model, subset, _tp, device = tiny_model_and_data
         loader = torch.utils.data.DataLoader(subset, batch_size=2, collate_fn=collate_fn)
         batch = next(iter(loader))
 
@@ -404,7 +404,7 @@ class TestEndToEndTrainingPipeline:
 
     def test_training_step(self, tiny_model_and_data):
         """Test 6: Complete training step (forward + backward + optimizer)."""
-        model, subset, tp, device = tiny_model_and_data
+        model, subset, _tp, device = tiny_model_and_data
         loader = torch.utils.data.DataLoader(subset, batch_size=2, collate_fn=collate_fn)
 
         optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)

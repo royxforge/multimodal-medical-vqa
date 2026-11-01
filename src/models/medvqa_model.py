@@ -8,7 +8,6 @@ Architecture:
 All trainable parameters should be under 50M (LoRA adapters only).
 """
 
-from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -120,10 +119,10 @@ class MedVQAModel(nn.Module):
         images: torch.Tensor,
         input_ids: torch.LongTensor,
         attention_mask: torch.FloatTensor,
-        labels: Optional[torch.LongTensor] = None,
+        labels: torch.LongTensor | None = None,
         return_visual_features: bool = False,
         return_text_features: bool = False,
-        vision_outputs: Optional[dict[str, torch.Tensor]] = None,
+        vision_outputs: dict[str, torch.Tensor] | None = None,
     ) -> dict[str, torch.Tensor]:
         """Forward pass through the full MedVQA model.
 
@@ -220,10 +219,10 @@ class MedVQAModel(nn.Module):
         input_ids: torch.LongTensor,
         attention_mask: torch.FloatTensor,
         max_new_tokens: int = 64,
-        num_beams: Optional[int] = None,
+        num_beams: int | None = None,
         temperature: float = 0.7,
         top_p: float = 0.9,
-        vision_outputs: Optional[dict[str, torch.Tensor]] = None,
+        vision_outputs: dict[str, torch.Tensor] | None = None,
         **kwargs,
     ) -> torch.LongTensor:
         """Generate answer for a batch of image-question pairs.

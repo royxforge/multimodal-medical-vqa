@@ -1,6 +1,32 @@
 [build-system]
 requires = ["setuptools>=68.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "medvqa"
+version = "0.5.0"
+description = "Multimodal Medical Visual Question Answering System"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "MedVQA Research" }]
+license = { text = "MIT" }
+dynamic = ["dependencies"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.packages.find]
+# Flat layout: `src` is the importable package (tests add the repo root to
+# sys.path for `api`), matching what setup.py's find_packages() discovered.
+where = ["."]
+include = ["src*"]
 
 # =============================================================================
 # Black — deterministic code formatter

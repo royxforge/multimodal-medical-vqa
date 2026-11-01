@@ -8,7 +8,6 @@ pretrained on chest X-rays. Falls back to CLIP ViT-L/14 if BioViL-T
 is unavailable (e.g., access restrictions).
 """
 
-from typing import Optional
 import os
 
 import torch
@@ -190,7 +189,7 @@ class BioViLTEncoder(nn.Module):
             "hidden_states": hidden_states,
         }
 
-    def register_gradcam_hooks(self, target_layer: Optional[int] = None):
+    def register_gradcam_hooks(self, target_layer: int | None = None):
         """Register forward and backward hooks for Grad-CAM.
 
         Hooks capture activations and gradients from the last transformer

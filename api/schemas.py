@@ -3,7 +3,6 @@
 Defines request and response models with validation for the FastAPI endpoints.
 """
 
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -40,9 +39,9 @@ class PredictResponse(BaseModel):
     uncertainty_flag: bool = Field(
         ..., description="Whether the model is uncertain about its answer"
     )
-    heatmap_path: Optional[str] = Field(None, description="Path to Grad-CAM visualization overlay")
+    heatmap_path: str | None = Field(None, description="Path to Grad-CAM visualization overlay")
     latency_ms: float = Field(..., description="Inference time in milliseconds")
-    predictive_entropy: Optional[float] = Field(
+    predictive_entropy: float | None = Field(
         None, description="Predictive entropy of the answer distribution"
     )
     follow_up_questions: list[str] = Field(
@@ -63,10 +62,10 @@ class BatchItemResult(BaseModel):
 
     filename: str = Field(..., description="Name of the uploaded image this item refers to")
     status: str = Field(..., description="'ok' when inference succeeded, 'error' otherwise")
-    result: Optional[PredictResponse] = Field(
+    result: PredictResponse | None = Field(
         None, description="Prediction payload, present when status is 'ok'"
     )
-    detail: Optional[str] = Field(None, description="Error detail, present when status is 'error'")
+    detail: str | None = Field(None, description="Error detail, present when status is 'error'")
 
 
 class BatchPredictResponse(BaseModel):
@@ -99,7 +98,7 @@ class HealthResponse(BaseModel):
 
     status: str = Field("ok", description="Service health status")
     model: str = Field(..., description="Model name and configuration")
-    vram_gb: Optional[float] = Field(None, description="Current GPU memory usage in GB")
+    vram_gb: float | None = Field(None, description="Current GPU memory usage in GB")
     device: str = Field(..., description="Active inference device")
 
 
@@ -127,9 +126,9 @@ class MetricsResponse(BaseModel):
         total_samples: Number of evaluation samples.
     """
 
-    accuracy: Optional[float] = Field(None, description="Closed-ended accuracy")
-    bleu_4: Optional[float] = Field(None, description="BLEU-4 score")
-    rouge_l_f1: Optional[float] = Field(None, description="ROUGE-L F1 score")
-    ece: Optional[float] = Field(None, description="Expected Calibration Error")
-    brier_score: Optional[float] = Field(None, description="Brier score")
+    accuracy: float | None = Field(None, description="Closed-ended accuracy")
+    bleu_4: float | None = Field(None, description="BLEU-4 score")
+    rouge_l_f1: float | None = Field(None, description="ROUGE-L F1 score")
+    ece: float | None = Field(None, description="Expected Calibration Error")
+    brier_score: float | None = Field(None, description="Brier score")
     total_samples: int = Field(0, description="Number of evaluation samples")

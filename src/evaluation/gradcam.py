@@ -18,7 +18,6 @@ e.g., a lung nodule location for "Is there a nodule?" questions.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -40,7 +39,7 @@ class GradCAM:
     """
 
     def __init__(
-        self, model: torch.nn.Module, target_layer: Optional[int] = None, image_size: int = 224
+        self, model: torch.nn.Module, target_layer: int | None = None, image_size: int = 224
     ):
         self.model = model
         self.image_size = image_size
@@ -70,7 +69,7 @@ class GradCAM:
         self._tokenizer = AutoTokenizer.from_pretrained(model_name)
         return self._tokenizer
 
-    def _register_hooks(self, target_layer: Optional[int] = None):
+    def _register_hooks(self, target_layer: int | None = None):
         """Register forward and backward hooks on vision encoder.
 
         Args:
@@ -117,7 +116,7 @@ class GradCAM:
         image: torch.Tensor,
         input_ids: torch.Tensor,
         attention_mask: torch.Tensor,
-        target_answer: Optional[str] = None,
+        target_answer: str | None = None,
     ) -> np.ndarray:
         """Compute Grad-CAM heatmap for an image-question pair.
 

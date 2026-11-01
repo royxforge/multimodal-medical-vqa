@@ -5,7 +5,6 @@ error analysis, and baseline comparisons.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,7 +31,7 @@ class Evaluator:
         self,
         model: torch.nn.Module,
         text_preprocessor: object,
-        gradcam: Optional[object] = None,
+        gradcam: object | None = None,
         device: str = "cuda",
     ):
         self.model = model
@@ -144,7 +143,7 @@ class Evaluator:
         bin_stats = ece_result["bin_stats"]
 
         # Create plot
-        fig, ax = plt.subplots(figsize=(8, 8))
+        _fig, ax = plt.subplots(figsize=(8, 8))
 
         # Perfect calibration line
         ax.plot([0, 1], [0, 1], "--", color="gray", label="Perfect calibration")

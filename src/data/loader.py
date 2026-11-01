@@ -13,7 +13,6 @@ import json
 import os
 from collections.abc import Callable
 from pathlib import Path
-from typing import Optional
 
 import torch
 from PIL import Image
@@ -43,10 +42,10 @@ class VQARADDataset(Dataset):
         self,
         data_dir: str = "data/raw/vqa_rad",
         split: str = "train",
-        image_transform: Optional[Callable] = None,
-        text_preprocessor: Optional[Callable] = None,
-        filter_type: Optional[str] = None,
-        annotation_files: Optional[list[str]] = None,
+        image_transform: Callable | None = None,
+        text_preprocessor: Callable | None = None,
+        filter_type: str | None = None,
+        annotation_files: list[str] | None = None,
     ):
         self.data_dir = Path(data_dir)
         self.image_dir = self.data_dir / "images"
@@ -222,10 +221,10 @@ class PathVQADataset(VQARADDataset):
         self,
         data_dir: str = "data/raw/pathvqa",
         split: str = "train",
-        image_transform: Optional[Callable] = None,
-        text_preprocessor: Optional[Callable] = None,
-        filter_type: Optional[str] = None,
-        annotation_files: Optional[list[str]] = None,
+        image_transform: Callable | None = None,
+        text_preprocessor: Callable | None = None,
+        filter_type: str | None = None,
+        annotation_files: list[str] | None = None,
     ):
         if annotation_files is None:
             annotation_files = [
@@ -291,8 +290,8 @@ def collate_fn(batch: list[dict]) -> dict[str, torch.Tensor]:
 
 def create_dataloaders(
     data_dir: str = "data/raw/vqa_rad",
-    image_transform: Optional[Callable] = None,
-    text_preprocessor: Optional[Callable] = None,
+    image_transform: Callable | None = None,
+    text_preprocessor: Callable | None = None,
     batch_size: int = 4,
     num_workers: int = 2,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:

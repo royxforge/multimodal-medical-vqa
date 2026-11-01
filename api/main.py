@@ -493,7 +493,7 @@ async def predict_batch(
             results.append(
                 BatchItemResult(filename=filename, status="error", detail=str(exc.detail))
             )
-        except Exception as exc:  # noqa: BLE001 - one bad image must not sink the batch
+        except Exception as exc:
             results.append(
                 BatchItemResult(
                     filename=filename,

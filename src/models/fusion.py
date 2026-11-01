@@ -12,7 +12,6 @@ The fusion module projects visual patch embeddings as keys/values and uses
 the LLM's question token embeddings as queries in a multi-head attention layer.
 """
 
-from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -77,8 +76,8 @@ class CrossAttentionFusion(nn.Module):
         self,
         text_embeddings: torch.Tensor,
         visual_tokens: torch.Tensor,
-        text_mask: Optional[torch.Tensor] = None,
-        visual_mask: Optional[torch.Tensor] = None,
+        text_mask: torch.Tensor | None = None,
+        visual_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Fuse visual information into text embeddings via cross-attention.
 

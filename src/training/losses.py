@@ -9,7 +9,6 @@ The combined loss uses a tunable alpha parameter to balance closed-ended
 and open-ended question losses.
 """
 
-from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -50,7 +49,7 @@ def closed_ended_loss(
 def open_ended_loss(
     logits: torch.Tensor,
     labels: torch.Tensor,
-    label_mask: Optional[torch.Tensor] = None,
+    label_mask: torch.Tensor | None = None,
     reduction: str = "mean",
 ) -> torch.Tensor:
     """Causal language modeling loss for open-ended answer generation.
@@ -179,11 +178,11 @@ class MedVQALoss(nn.Module):
         logits: torch.Tensor,
         labels: torch.Tensor,
         is_yesno: torch.Tensor,
-        yesno_logits: Optional[torch.Tensor] = None,
-        visual_features: Optional[torch.Tensor] = None,
-        answer_features: Optional[torch.Tensor] = None,
-        answer_labels: Optional[torch.Tensor] = None,
-        lm_loss: Optional[torch.Tensor] = None,
+        yesno_logits: torch.Tensor | None = None,
+        visual_features: torch.Tensor | None = None,
+        answer_features: torch.Tensor | None = None,
+        answer_labels: torch.Tensor | None = None,
+        lm_loss: torch.Tensor | None = None,
     ) -> dict[str, torch.Tensor]:
         """Compute combined loss for a batch.
 

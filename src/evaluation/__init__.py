@@ -11,13 +11,13 @@ from .metrics import (
 )
 
 __all__ = [
-    "compute_closed_ended_accuracy",
-    "compute_bleu",
-    "compute_rouge_l",
-    "compute_bertscore",
-    "compute_ece",
-    "compute_brier_score",
-    "compute_all_metrics",
-    "GradCAM",
     "Evaluator",
+    "GradCAM",
+    "compute_all_metrics",
+    "compute_bertscore",
+    "compute_bleu",
+    "compute_brier_score",
+    "compute_closed_ended_accuracy",
+    "compute_ece",
+    "compute_rouge_l",
 ]

@@ -16,7 +16,6 @@ Calibration:
 - OOD Detection AUROC
 """
 
-from typing import Optional
 
 import numpy as np
 from nltk.translate.bleu_score import SmoothingFunction, corpus_bleu
@@ -237,9 +236,9 @@ def compute_ood_detection_auroc(id_confidences: np.ndarray, ood_confidences: np.
 def compute_all_metrics(
     predictions: list[str],
     references: list[str],
-    confidences: Optional[np.ndarray] = None,
-    is_yesno: Optional[list[bool]] = None,
-    ood_confidences: Optional[np.ndarray] = None,
+    confidences: np.ndarray | None = None,
+    is_yesno: list[bool] | None = None,
+    ood_confidences: np.ndarray | None = None,
 ) -> dict[str, float]:
     """Compute all evaluation metrics.
 

@@ -23,7 +23,7 @@ import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 
 @dataclass
@@ -44,7 +44,7 @@ class APILLMConfig:
     model: str = "gpt-4o"
     temperature: float = 0.7
     max_tokens: int = 256
-    api_key: Optional[str] = None
+    api_key: str | None = None
     ollama_base_url: str = "http://localhost:11434"
 
     _ENV_MAP: ClassVar[dict] = {
@@ -53,7 +53,7 @@ class APILLMConfig:
         "gemini": "GEMINI_API_KEY",
     }
 
-    def resolve_api_key(self) -> Optional[str]:
+    def resolve_api_key(self) -> str | None:
         """Resolve API key from explicit value, env var, or .env file."""
         if self.api_key:
             return self.api_key
@@ -107,7 +107,7 @@ class APILLMClient:
     models can reason over it directly.
     """
 
-    def __init__(self, config: Optional[APILLMConfig] = None):
+    def __init__(self, config: APILLMConfig | None = None):
         self.config = config or APILLMConfig()
         self._session = None  # Lazy-init per provider
 

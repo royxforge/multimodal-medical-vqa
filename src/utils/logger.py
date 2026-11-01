@@ -6,12 +6,11 @@ Provides consistent logging across training, evaluation, and inference.
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 
 def setup_logger(
     name: str = "medvqa",
-    log_file: Optional[str] = None,
+    log_file: str | None = None,
     level: int = logging.INFO,
     verbose: bool = False,
 ) -> logging.Logger:
